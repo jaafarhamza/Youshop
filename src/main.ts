@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { CustomLoggerService } from './common/logger/logger.service';
-import { LoggerService } from '@nestjs/common';
+import { LoggerService, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -15,6 +15,14 @@ async function bootstrap() {
 
   const customLogger = app.get<CustomLoggerService>(CustomLoggerService);
   app.useGlobalFilters(new AllExceptionsFilter(customLogger));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
