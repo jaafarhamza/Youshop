@@ -2,17 +2,21 @@ import {
   Injectable,
   ConflictException,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CustomLoggerService } from '../common/logger/logger.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: CustomLoggerService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -62,5 +66,47 @@ export class AuthService {
       );
       throw new InternalServerErrorException('Failed to create user');
     }
+  }
+
+  async login(loginDto: LoginDto) {
+    const { email, password } = loginDto;
+
+    this.logger.log(`Login attempt for email: ${email}`, 'AuthService');
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      this.logger.warn(
+        `Login failed: User not found - ${email}`,
+        'AuthService',
+      );
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      this.logger.warn(
+        `Login failed: Invalid password - ${email}`,
+        'AuthService',
+      );
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
+
+    this.logger.log(`User logged in successfully: ${user.id}`, 'AuthService');
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        roles: user.roles,
+      },
+    };
   }
 }
