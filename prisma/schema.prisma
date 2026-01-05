@@ -64,6 +64,7 @@ model Product {
   @@index([sku])
   @@index([isActive])
   @@index([price])
+  @@index([isActive, categoryId, price])
   @@map("products")
 }
 
