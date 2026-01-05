@@ -40,10 +40,14 @@ FROM node:24-alpine AS development
 WORKDIR /app
 
 COPY package*.json ./
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
 RUN npm install
 
 COPY . .
+
+RUN npx prisma generate
 
 EXPOSE 3000
 
