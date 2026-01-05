@@ -9,6 +9,7 @@ import {
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { RegisterResponseDto, LoginResponseDto } from './dto/auth-response.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -19,7 +20,7 @@ export class AuthController {
   async register(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     registerDto: RegisterDto,
-  ) {
+  ): Promise<RegisterResponseDto> {
     return this.authService.register(registerDto);
   }
 
@@ -28,7 +29,7 @@ export class AuthController {
   async login(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
     loginDto: LoginDto,
-  ) {
+  ): Promise<LoginResponseDto> {
     return this.authService.login(loginDto);
   }
 }

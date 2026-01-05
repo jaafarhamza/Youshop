@@ -1,7 +1,13 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { ProductDetailResponseDto } from './dto/product-response.dto';
 import { Prisma } from '@prisma/client';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class CatalogService {
@@ -101,5 +107,51 @@ export class CatalogService {
         search: search || null,
       },
     };
+  }
+
+  async getProductById(id: string): Promise<ProductDetailResponseDto> {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            description: true,
+          },
+        },
+        inventory: {
+          select: {
+            quantity: true,
+            reserved: true,
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID "${id}" not found`);
+    }
+
+    // Calculate inventory availability
+    const inventory = product.inventory
+      ? {
+          quantity: product.inventory.quantity,
+          reserved: product.inventory.reserved,
+          available: product.inventory.quantity - product.inventory.reserved,
+          inStock: product.inventory.quantity - product.inventory.reserved > 0,
+        }
+      : null;
+
+    // Transform to DTO - only exposes fields marked with @Expose()
+    return plainToInstance(
+      ProductDetailResponseDto,
+      {
+        ...product,
+        inventory,
+      },
+      { excludeExtraneousValues: true },
+    );
   }
 }

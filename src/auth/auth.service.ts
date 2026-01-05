@@ -10,6 +10,12 @@ import { CustomLoggerService } from '../common/logger/logger.service';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import {
+  RegisterResponseDto,
+  LoginResponseDto,
+  UserResponseDto,
+} from './dto/auth-response.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +25,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto): Promise<RegisterResponseDto> {
     const { email, password } = registerDto;
 
     this.logger.log(`Registration attempt for email: ${email}`, 'AuthService');
@@ -57,7 +63,20 @@ export class AuthService {
         `User registered successfully: ${user.id}`,
         'AuthService',
       );
-      return user;
+
+      // Transform to DTO - ensures only safe fields are exposed
+      const userDto = plainToInstance(UserResponseDto, user, {
+        excludeExtraneousValues: true,
+      });
+
+      return plainToInstance(
+        RegisterResponseDto,
+        {
+          user: userDto,
+          message: 'Registration successful',
+        },
+        { excludeExtraneousValues: true },
+      );
     } catch {
       this.logger.error(
         `Failed to create user for email: ${email}`,
@@ -68,7 +87,7 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const { email, password } = loginDto;
 
     this.logger.log(`Login attempt for email: ${email}`, 'AuthService');
@@ -100,13 +119,25 @@ export class AuthService {
 
     this.logger.log(`User logged in successfully: ${user.id}`, 'AuthService');
 
-    return {
-      accessToken,
-      user: {
+    // Transform to DTO - ensures passwordHash is never exposed
+    const userDto = plainToInstance(
+      UserResponseDto,
+      {
         id: user.id,
         email: user.email,
         roles: user.roles,
+        createdAt: user.createdAt,
       },
-    };
+      { excludeExtraneousValues: true },
+    );
+
+    return plainToInstance(
+      LoginResponseDto,
+      {
+        accessToken,
+        user: userDto,
+      },
+      { excludeExtraneousValues: true },
+    );
   }
 }
