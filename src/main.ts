@@ -24,11 +24,14 @@ async function bootstrap() {
     }),
   );
 
+  const apiPrefix = process.env.API_PREFIX ?? 'api/v1';
+  app.setGlobalPrefix(apiPrefix);
+
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
   logger.log(
-    `Application is running on: http://localhost:${port}`,
+    `Application is running on: http://localhost:${port}/${apiPrefix}`,
     'Bootstrap',
   );
 
