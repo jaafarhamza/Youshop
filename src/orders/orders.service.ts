@@ -233,4 +233,89 @@ export class OrdersService {
       }),
     );
   }
+
+  async cancelOrder(
+    userId: string,
+    orderId: string,
+  ): Promise<OrderResponseDto> {
+    this.logger.log(
+      `Attempting to cancel order ${orderId} for user ${userId}`,
+      'OrdersService',
+    );
+
+    const order = await this.prisma.$transaction(async (tx) => {
+      // 1. Get order with items
+      const existingOrder = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { items: true },
+      });
+
+      if (!existingOrder) {
+        throw new NotFoundException(`Order not found: ${orderId}`);
+      }
+
+      if (existingOrder.userId !== userId) {
+        throw new NotFoundException(`Order not found: ${orderId}`);
+      }
+
+      // 2. Idempotency & State Check
+      if (existingOrder.status === 'CANCELLED') {
+        this.logger.log(
+          `Order ${orderId} is already cancelled`,
+          'OrdersService',
+        );
+        return existingOrder;
+      }
+
+      if (existingOrder.status !== 'PENDING') {
+        throw new BadRequestException(
+          `Cannot cancel order with status: ${existingOrder.status}`,
+        );
+      }
+
+      // 3. Update Order Status
+      const cancelledOrder = await tx.order.update({
+        where: { id: orderId },
+        data: { status: 'CANCELLED' },
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  price: true,
+                  currency: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // 4. Release Reserved Stock
+      for (const item of existingOrder.items) {
+        await tx.inventoryItem.update({
+          where: { sku: item.sku },
+          data: {
+            reserved: { decrement: item.quantity },
+          },
+        });
+
+        this.logger.log(
+          `Released ${item.quantity} reserved units for SKU ${item.sku}`,
+          'OrdersService',
+        );
+      }
+
+      return cancelledOrder;
+    });
+
+    this.logger.log(`Order ${orderId} cancelled successfully`, 'OrdersService');
+
+    return plainToInstance(OrderResponseDto, order, {
+      excludeExtraneousValues: true,
+    });
+  }
 }

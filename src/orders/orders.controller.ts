@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   Param,
   UseGuards,
@@ -41,5 +42,13 @@ export class OrdersController {
     @Param('id') orderId: string,
   ): Promise<OrderResponseDto> {
     return this.ordersService.getOrderById(userId, orderId);
+  }
+
+  @Patch(':id/cancel')
+  async cancelOrder(
+    @CurrentUser('id') userId: string,
+    @Param('id') orderId: string,
+  ): Promise<OrderResponseDto> {
+    return this.ordersService.cancelOrder(userId, orderId);
   }
 }
