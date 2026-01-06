@@ -62,6 +62,15 @@ export class InventoryController {
     return this.inventoryService.getLowStockItems(query.threshold);
   }
 
+  // Get out-of-stock items (Admin only)
+
+  @Get('out-of-stock')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
+  async getOutOfStockItems() {
+    return this.inventoryService.getOutOfStockItems();
+  }
+
   // Check stock availability (Public)
 
   @Get(':sku/availability')

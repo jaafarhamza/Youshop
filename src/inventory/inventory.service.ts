@@ -364,6 +364,64 @@ export class InventoryService {
     }));
   }
 
+  // Get out-of-stock items
+
+  async getOutOfStockItems() {
+    this.logger.log(
+      'Fetching out-of-stock items (available <= 0)',
+      'InventoryService',
+    );
+
+    // Query items where quantity - reserved <= 0
+    const items = await this.prisma.inventoryItem.findMany({
+      where: {
+        OR: [
+          // Case 1: quantity <= reserved (available is 0 or negative)
+          {
+            quantity: {
+              lte: this.prisma.inventoryItem.fields.reserved,
+            },
+          },
+        ],
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            price: true,
+            currency: true,
+            isActive: true,
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ quantity: 'asc' }, { reserved: 'desc' }],
+    });
+
+    // Filter in-memory to ensure accurate calculation
+    const outOfStock = items.filter(
+      (item) => item.quantity - item.reserved <= 0,
+    );
+
+    this.logger.log(
+      `Found ${outOfStock.length} out-of-stock items`,
+      'InventoryService',
+    );
+
+    return outOfStock.map((item) => ({
+      ...this.mapToDto(item),
+      product: item.product,
+    }));
+  }
+
   // Map inventory to DTO with calculated fields
 
   private mapToDto(inventory: {
