@@ -1,4 +1,10 @@
-import { IsInt, Min, IsNotEmpty } from 'class-validator';
+import {
+  IsInt,
+  Min,
+  IsNotEmpty,
+  IsOptional,
+  ValidateIf,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateInventoryDto {
@@ -9,11 +15,34 @@ export class UpdateInventoryDto {
   quantity!: number;
 }
 
+export class UpdateInventoryStockDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Quantity must be an integer' })
+  @Min(0, { message: 'Quantity must be greater than or equal to 0' })
+  quantity?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Reserved must be an integer' })
+  @Min(0, { message: 'Reserved must be greater than or equal to 0' })
+  reserved?: number;
+
+  @ValidateIf(
+    (o: UpdateInventoryStockDto) =>
+      o.quantity === undefined && o.reserved === undefined,
+  )
+  @IsNotEmpty({
+    message: 'At least one field (quantity or reserved) must be provided',
+  })
+  _atLeastOne?: never;
+}
+
 export class AdjustStockDto {
   @Type(() => Number)
   @IsInt({ message: 'Amount must be an integer' })
   @IsNotEmpty({ message: 'Amount is required' })
-  amount!: number; // Can be positive (add) or negative (remove)
+  amount!: number;
 }
 
 export class ReserveStockDto {

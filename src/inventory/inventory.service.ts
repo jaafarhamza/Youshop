@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CustomLoggerService } from '../common/logger/logger.service';
 import { InventoryResponseDto } from './dto/inventory-response.dto';
+import { UpdateInventoryStockDto } from './dto/update-inventory.dto';
 import { plainToInstance } from 'class-transformer';
 
 @Injectable()
@@ -87,6 +88,70 @@ export class InventoryService {
 
     this.logger.log(
       `Successfully added ${quantity} units to SKU: ${sku}. New quantity: ${inventory.quantity}`,
+      'InventoryService',
+    );
+
+    return this.mapToDto(inventory);
+  }
+
+  // Update inventory stock - Direct update with transaction safety and invariant validation
+
+  async updateInventoryStock(
+    sku: string,
+    updateDto: UpdateInventoryStockDto,
+  ): Promise<InventoryResponseDto> {
+    this.logger.log(
+      `Updating inventory for SKU: ${sku} - ${JSON.stringify(updateDto)}`,
+      'InventoryService',
+    );
+
+    const inventory = await this.prisma.$transaction(async (tx) => {
+      // Fetch existing inventory
+      const existing = await tx.inventoryItem.findUnique({
+        where: { sku },
+      });
+
+      if (!existing) {
+        throw new NotFoundException(`Inventory not found for SKU: ${sku}`);
+      }
+
+      // Determine new values (preserve existing if not provided)
+      const newQuantity = updateDto.quantity ?? existing.quantity;
+      const newReserved = updateDto.reserved ?? existing.reserved;
+
+      // Invariant check: reserved must not exceed quantity
+      if (newReserved > newQuantity) {
+        throw new BadRequestException(
+          `Invalid update: reserved (${newReserved}) cannot exceed quantity (${newQuantity})`,
+        );
+      }
+
+      // Log old values for audit
+      this.logger.log(
+        `[AUDIT] SKU: ${sku} - Before update: quantity=${existing.quantity}, reserved=${existing.reserved}, available=${existing.quantity - existing.reserved}`,
+        'InventoryService',
+      );
+
+      // Perform atomic update
+      const updated = await tx.inventoryItem.update({
+        where: { sku },
+        data: {
+          quantity: newQuantity,
+          reserved: newReserved,
+        },
+      });
+
+      // Log new values for audit
+      this.logger.log(
+        `[AUDIT] SKU: ${sku} - After update: quantity=${updated.quantity}, reserved=${updated.reserved}, available=${updated.quantity - updated.reserved}`,
+        'InventoryService',
+      );
+
+      return updated;
+    });
+
+    this.logger.log(
+      `Successfully updated inventory for SKU: ${sku}`,
       'InventoryService',
     );
 

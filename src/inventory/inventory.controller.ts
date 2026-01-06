@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Param,
   Body,
   Query,
@@ -14,6 +15,7 @@ import {
   ReserveStockDto,
   ReleaseStockDto,
   AdjustStockDto,
+  UpdateInventoryStockDto,
 } from './dto/update-inventory.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -68,6 +70,19 @@ export class InventoryController {
     @Query('quantity') quantity: number = 1,
   ) {
     return this.inventoryService.checkAvailability(sku, quantity);
+  }
+
+  // Update inventory stock (Admin only)
+
+  @Put(':sku')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  async updateInventoryStock(
+    @Param('sku') sku: string,
+    @Body() updateDto: UpdateInventoryStockDto,
+  ) {
+    return this.inventoryService.updateInventoryStock(sku, updateDto);
   }
 
   // Add stock (Admin only)
