@@ -1,10 +1,16 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const adapter = new PrismaPg({
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not defined');
+}
+
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
-
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
@@ -58,6 +64,15 @@ async function main() {
       categoryId: electronics.id,
     },
     {
+      name: 'Gaming Keyboard RGB',
+      slug: 'gaming-keyboard-rgb',
+      description:
+        'Mechanical gaming keyboard with RGB lighting and programmable keys',
+      price: 149.99,
+      sku: 'ELEC-KEY-001',
+      categoryId: electronics.id,
+    },
+    {
       name: 'T-Shirt Blue',
       slug: 't-shirt-blue',
       description: 'Cotton blue t-shirt',
@@ -76,11 +91,78 @@ async function main() {
   ];
 
   for (const product of products) {
-    await prisma.product.upsert({
-      where: { slug: product.slug },
-      update: {},
-      create: product,
+    try {
+      await prisma.product.upsert({
+        where: { slug: product.slug },
+        update: {},
+        create: product,
+      });
+    } catch (error) {
+      // Product already exists, skip
+      console.log(`Product ${product.sku} already exists, skipping...`, error);
+    }
+  }
+
+  console.log('Products seeded. Creating inventory...');
+
+  // Create inventory items for all products
+  const inventoryData = [
+    {
+      sku: 'ELEC-LAP-001',
+      quantity: 25,
+      reserved: 3,
+    },
+    {
+      sku: 'ELEC-MOU-001',
+      quantity: 150,
+      reserved: 10,
+    },
+    {
+      sku: 'ELEC-CAB-001',
+      quantity: 500,
+      reserved: 25,
+    },
+    {
+      sku: 'ELEC-KEY-001',
+      quantity: 45,
+      reserved: 8,
+    },
+    {
+      sku: 'CLO-TSH-001',
+      quantity: 200,
+      reserved: 15,
+    },
+    {
+      sku: 'CLO-JEA-001',
+      quantity: 75,
+      reserved: 5,
+    },
+  ];
+
+  for (const inventory of inventoryData) {
+    // Find product by SKU
+    const product = await prisma.product.findUnique({
+      where: { sku: inventory.sku },
     });
+
+    if (product) {
+      await prisma.inventoryItem.upsert({
+        where: { sku: inventory.sku },
+        update: {
+          quantity: inventory.quantity,
+          reserved: inventory.reserved,
+        },
+        create: {
+          sku: inventory.sku,
+          productId: product.id,
+          quantity: inventory.quantity,
+          reserved: inventory.reserved,
+        },
+      });
+      console.log(
+        `Inventory created for ${inventory.sku}: ${inventory.quantity - inventory.reserved} available`,
+      );
+    }
   }
 
   console.log('Seeding completed!');
