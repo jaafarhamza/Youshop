@@ -98,15 +98,10 @@ export class OrdersService {
       }
 
       // Step 3: Calculate order totals
-      let subtotal = 0;
-
-      for (const item of createOrderDto.items) {
-        const productInfo = productMap.get(item.sku)!;
-        subtotal += productInfo.price * item.quantity;
-      }
-
-      const tax = (subtotal * this.taxRate) / 100;
-      const total = subtotal + tax;
+      const { subtotal, tax, total } = this.calculateOrderTotals(
+        createOrderDto.items,
+        productMap,
+      );
 
       this.logger.log(
         `Order totals - Subtotal: ${subtotal}, Tax (${this.taxRate}%): ${tax}, Total: ${total}`,
@@ -317,5 +312,70 @@ export class OrdersService {
     return plainToInstance(OrderResponseDto, order, {
       excludeExtraneousValues: true,
     });
+  }
+
+  async previewOrder(createOrderDto: CreateOrderDto): Promise<any> {
+    // 1. Validate items and fetch prices
+    const itemPreviews: any[] = [];
+    const productMap = new Map<string, { price: number }>();
+
+    for (const item of createOrderDto.items) {
+      const product = await this.prisma.product.findUnique({
+        where: { sku: item.sku },
+        select: { id: true, price: true, isActive: true },
+      });
+
+      if (!product) {
+        throw new NotFoundException(`Product not found for SKU: ${item.sku}`);
+      }
+
+      if (!product.isActive) {
+        throw new BadRequestException(
+          `Product ${item.sku} is not available for purchase`,
+        );
+      }
+
+      productMap.set(item.sku, { price: product.price });
+
+      itemPreviews.push({
+        sku: item.sku,
+        quantity: item.quantity,
+        unitPrice: product.price,
+        subtotal: product.price * item.quantity,
+      });
+    }
+
+    const { subtotal, tax, total } = this.calculateOrderTotals(
+      createOrderDto.items,
+      productMap,
+    );
+
+    return {
+      items: itemPreviews,
+      subtotal,
+      tax,
+      total,
+    };
+  }
+
+  calculateOrderTotals(
+    items: { sku: string; quantity: number }[],
+    productMap: Map<string, { price: number }>,
+  ): { subtotal: number; tax: number; total: number } {
+    let subtotal = 0;
+
+    for (const item of items) {
+      const productInfo = productMap.get(item.sku);
+      if (productInfo) {
+        subtotal += productInfo.price * item.quantity;
+      }
+    }
+
+    // Fix floating point issues
+    subtotal = Math.round(subtotal * 100) / 100;
+    const tax = Math.round(subtotal * this.taxRate) / 100;
+    const total = Math.round((subtotal + tax) * 100) / 100;
+
+    return { subtotal, tax, total };
   }
 }

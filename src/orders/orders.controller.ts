@@ -51,4 +51,10 @@ export class OrdersController {
   ): Promise<OrderResponseDto> {
     return this.ordersService.cancelOrder(userId, orderId);
   }
+
+  @Post('preview')
+  @HttpCode(HttpStatus.OK)
+  async previewOrder(@Body() createOrderDto: CreateOrderDto): Promise<any> {
+    return this.ordersService.previewOrder(createOrderDto);
+  }
 }
