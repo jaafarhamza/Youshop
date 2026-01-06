@@ -4,9 +4,10 @@ import { CatalogController } from './catalog.controller';
 import { PrismaModule } from '../common/prisma/prisma.module';
 import { LoggerModule } from '../common/logger/logger.module';
 import { AuthModule } from '../auth/auth.module';
+import { CacheModule } from '../common/cache/cache.module';
 
 @Module({
-  imports: [PrismaModule, LoggerModule, AuthModule],
+  imports: [PrismaModule, LoggerModule, AuthModule, CacheModule],
   providers: [CatalogService],
   controllers: [CatalogController],
 })

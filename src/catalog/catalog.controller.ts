@@ -9,9 +9,11 @@ import {
   Param,
   Body,
   UseGuards,
+  UseInterceptors,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { CatalogService } from './catalog.service';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -27,11 +29,13 @@ export class CatalogController {
   constructor(private readonly catalogService: CatalogService) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
   async getProducts(@Query() query: PaginationQueryDto) {
     return this.catalogService.getProducts(query);
   }
 
   @Get(':id')
+  @UseInterceptors(CacheInterceptor)
   async getProductById(
     @Param('id') id: string,
   ): Promise<ProductDetailResponseDto> {
