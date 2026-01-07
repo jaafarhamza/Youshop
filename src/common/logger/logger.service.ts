@@ -29,7 +29,7 @@ export class CustomLoggerService implements LoggerService {
     this.logger.verbose(message, { context });
   }
 
-  logEvent(event: string, data: Record<string, any>) {
+  logEvent(event: string, data: Record<string, unknown>) {
     this.logger.info(event, { event, ...data });
   }
 

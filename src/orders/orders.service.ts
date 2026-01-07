@@ -8,6 +8,10 @@ import { CustomLoggerService } from '../common/logger/logger.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
+import {
+  OrderPreviewResponseDto,
+  OrderPreviewItemDto,
+} from './dto/order-preview-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { ConfigService } from '@nestjs/config';
 
@@ -378,9 +382,11 @@ export class OrdersService {
     });
   }
 
-  async previewOrder(createOrderDto: CreateOrderDto): Promise<any> {
+  async previewOrder(
+    createOrderDto: CreateOrderDto,
+  ): Promise<OrderPreviewResponseDto> {
     // 1. Validate items and fetch prices
-    const itemPreviews: any[] = [];
+    const itemPreviews: OrderPreviewItemDto[] = [];
     const productMap = new Map<string, { price: number }>();
 
     for (const item of createOrderDto.items) {

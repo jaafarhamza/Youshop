@@ -6,8 +6,10 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateInventoryDto {
+  @ApiProperty({ description: 'New total quantity', example: 100, minimum: 0 })
   @Type(() => Number)
   @IsInt({ message: 'Quantity must be an integer' })
   @Min(0, { message: 'Quantity must be greater than or equal to 0' })
@@ -16,12 +18,24 @@ export class UpdateInventoryDto {
 }
 
 export class UpdateInventoryStockDto {
+  @ApiProperty({
+    description: 'New total quantity',
+    example: 100,
+    minimum: 0,
+    required: false,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'Quantity must be an integer' })
   @Min(0, { message: 'Quantity must be greater than or equal to 0' })
   quantity?: number;
 
+  @ApiProperty({
+    description: 'New reserved quantity',
+    example: 10,
+    minimum: 0,
+    required: false,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'Reserved must be an integer' })
@@ -39,6 +53,7 @@ export class UpdateInventoryStockDto {
 }
 
 export class AdjustStockDto {
+  @ApiProperty({ description: 'Amount to add or remove', example: 50 })
   @Type(() => Number)
   @IsInt({ message: 'Amount must be an integer' })
   @IsNotEmpty({ message: 'Amount is required' })
@@ -46,6 +61,7 @@ export class AdjustStockDto {
 }
 
 export class ReserveStockDto {
+  @ApiProperty({ description: 'Quantity to reserve', example: 5, minimum: 1 })
   @Type(() => Number)
   @IsInt({ message: 'Quantity must be an integer' })
   @Min(1, { message: 'Quantity must be at least 1' })
@@ -54,6 +70,11 @@ export class ReserveStockDto {
 }
 
 export class ReleaseStockDto {
+  @ApiProperty({
+    description: 'Quantity to release from reservation',
+    example: 5,
+    minimum: 1,
+  })
   @Type(() => Number)
   @IsInt({ message: 'Quantity must be an integer' })
   @Min(1, { message: 'Quantity must be at least 1' })
