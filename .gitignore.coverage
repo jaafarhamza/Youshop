@@ -1,0 +1,9 @@
+# Coverage reports
+coverage/
+coverage-e2e/
+.nyc_output/
+*.lcov
+
+# Test artifacts
+*.test.log
+test-results/
