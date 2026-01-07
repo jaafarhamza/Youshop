@@ -55,6 +55,14 @@ export class OrdersController {
     return this.ordersService.cancelOrder(userId, orderId);
   }
 
+  @Patch(':id/pay')
+  async payOrder(
+    @CurrentUser('id') userId: string,
+    @Param('id') orderId: string,
+  ): Promise<OrderResponseDto> {
+    return this.ordersService.payOrder(userId, orderId);
+  }
+
   @Post('preview')
   @HttpCode(HttpStatus.OK)
   async previewOrder(@Body() createOrderDto: CreateOrderDto): Promise<any> {

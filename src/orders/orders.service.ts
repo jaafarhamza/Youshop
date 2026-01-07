@@ -318,7 +318,60 @@ export class OrdersService {
       return cancelledOrder;
     });
 
-    this.logger.log(`Order ${orderId} cancelled successfully`, 'OrdersService');
+    return plainToInstance(OrderResponseDto, order, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  async payOrder(userId: string, orderId: string): Promise<OrderResponseDto> {
+    this.logger.log(`Attempting to pay order ${orderId}`, 'OrdersService');
+
+    const order = await this.prisma.$transaction(async (tx) => {
+      const existingOrder = await tx.order.findUnique({
+        where: { id: orderId },
+      });
+
+      if (!existingOrder) {
+        throw new NotFoundException(`Order not found: ${orderId}`);
+      }
+
+      if (existingOrder.userId !== userId) {
+        throw new NotFoundException(`Order not found: ${orderId}`);
+      }
+
+      if (existingOrder.status !== 'PENDING') {
+        throw new BadRequestException(
+          `Cannot pay order with status: ${existingOrder.status}`,
+        );
+      }
+
+      const paidOrder = await tx.order.update({
+        where: { id: orderId },
+        data: { status: 'PAID' },
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  price: true,
+                  currency: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return paidOrder;
+    });
+
+    this.logger.log(
+      `Order ${orderId} paid successfully by user ${userId}`,
+      'OrdersService',
+    );
 
     return plainToInstance(OrderResponseDto, order, {
       excludeExtraneousValues: true,
