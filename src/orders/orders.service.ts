@@ -199,8 +199,17 @@ export class OrdersService {
     });
   }
 
-  async getUserOrders(userId: string): Promise<OrderResponseDto[]> {
-    this.logger.log(`Fetching all orders for user ${userId}`, 'OrdersService');
+  async getUserOrders(
+    userId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<OrderResponseDto[]> {
+    this.logger.log(
+      `Fetching orders for user ${userId}, page ${page}, limit ${limit}`,
+      'OrdersService',
+    );
+
+    const skip = (page - 1) * limit;
 
     const orders = await this.prisma.order.findMany({
       where: { userId },
@@ -220,6 +229,8 @@ export class OrdersService {
         },
       },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
     });
 
     return orders.map((order) =>

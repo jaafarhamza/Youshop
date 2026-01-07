@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -32,8 +33,10 @@ export class OrdersController {
   @Get()
   async getUserOrders(
     @CurrentUser('id') userId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
   ): Promise<OrderResponseDto[]> {
-    return this.ordersService.getUserOrders(userId);
+    return this.ordersService.getUserOrders(userId, +page, +limit);
   }
 
   @Get(':id')
