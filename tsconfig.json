@@ -20,6 +20,15 @@
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
-    "strict": true
+    "strict": true,
+    "baseUrl": "./",
+    "paths": {
+      "y/common": [
+        "libs/common/src"
+      ],
+      "y/common/*": [
+        "libs/common/src/*"
+      ]
+    }
   }
 }

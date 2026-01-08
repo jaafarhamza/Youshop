@@ -1,5 +1,9 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
@@ -16,5 +20,8 @@
     "!../src/**/*.interface.ts",
     "!../src/**/*.dto.ts"
   ],
-  "coverageDirectory": "../coverage-e2e"
+  "coverageDirectory": "../coverage-e2e",
+  "moduleNameMapper": {
+    "^y/common(|/.*)$": "<rootDir>/../libs/common/src/$1"
+  }
 }
