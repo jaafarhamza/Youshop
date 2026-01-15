@@ -1,8 +1,12 @@
+import { config } from 'dotenv';
+config();
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import * as http from 'http';
 import { InventoryModule } from './../src/inventory.module';
+import { AuthModule } from '../../auth-service/src/auth.module';
 import { TestDataSeeder } from './test-data-seeder';
 import { PrismaService } from 'y/common';
 
@@ -15,7 +19,7 @@ describe('Inventory (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [InventoryModule],
+      imports: [InventoryModule, AuthModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();

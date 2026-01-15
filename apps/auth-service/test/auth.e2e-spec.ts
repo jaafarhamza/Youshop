@@ -1,8 +1,12 @@
+import { config } from 'dotenv';
+config();
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import * as http from 'http';
 import { AuthModule } from './../src/auth.module';
+import { OrdersModule } from '../../orders-service/src/orders.module';
 import { TestDataSeeder } from './test-data-seeder';
 
 describe('Authentication (e2e)', () => {
@@ -11,7 +15,7 @@ describe('Authentication (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule],
+      imports: [AuthModule, OrdersModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
