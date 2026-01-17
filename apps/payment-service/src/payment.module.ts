@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PaymentController } from './payment.controller';
+import { WebhookController } from './webhook.controller';
 import { PaymentService } from './payment.service';
 import { PrismaModule, LoggerModule } from 'y/common';
 import { JwtModule } from '@nestjs/jwt';
@@ -17,7 +18,7 @@ import { PassportModule } from '@nestjs/passport';
     PrismaModule,
     LoggerModule,
   ],
-  controllers: [PaymentController],
+  controllers: [PaymentController, WebhookController],
   providers: [PaymentService],
   exports: [PaymentService],
 })

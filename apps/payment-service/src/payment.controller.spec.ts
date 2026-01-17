@@ -1,10 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
-import {
-  CheckoutSessionResponseDto,
-  CreateCheckoutSessionDto,
-} from '../../../../Youshop/libs/common/src';
+import { CheckoutSessionResponseDto, CreateCheckoutSessionDto } from 'y/common';
 import { ConfigService } from '@nestjs/config';
 
 describe('PaymentController', () => {

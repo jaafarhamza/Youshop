@@ -4,7 +4,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ApiGatewayModule } from './api-gateway.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(ApiGatewayModule);
+  const app = await NestFactory.create(ApiGatewayModule, {
+    rawBody: true,
+  });
 
   const apiPrefix = process.env.API_PREFIX || 'api/v1';
   app.setGlobalPrefix(apiPrefix);

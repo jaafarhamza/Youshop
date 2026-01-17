@@ -341,4 +341,107 @@ export class PaymentService {
       },
     });
   }
+
+  // Handle Stripe Webhook Events
+
+  async handleWebhookEvent(signature: string, payload: Buffer): Promise<void> {
+    const webhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
+
+    if (!webhookSecret) {
+      throw new Error('STRIPE_WEBHOOK_SECRET is not defined');
+    }
+
+    let event: Stripe.Event;
+
+    try {
+      event = this.stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        webhookSecret,
+      );
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.error(
+        `Webhook signature verification failed: ${errorMessage}`,
+        err instanceof Error ? err.stack : '',
+        'PaymentService',
+      );
+      throw new BadRequestException(`Webhook Error: ${errorMessage}`);
+    }
+
+    this.logger.log(
+      `Received Webhook Event: ${event.type} [ID: ${event.id}]`,
+      'PaymentService',
+    );
+
+    switch (event.type) {
+      case 'checkout.session.completed':
+        await this.handleCheckoutSessionCompleted(event.data.object);
+        break;
+      case 'payment_intent.payment_failed':
+        this.logger.warn(
+          `Payment failed for Intent: ${event.data.object.id}`,
+          'PaymentService',
+        );
+        break;
+      default:
+        this.logger.log(
+          `Unhandled event type: ${event.type}`,
+          'PaymentService',
+        );
+    }
+  }
+
+  private async handleCheckoutSessionCompleted(
+    session: Stripe.Checkout.Session,
+  ): Promise<void> {
+    const sessionId = session.id;
+    const paymentIntentId = session.payment_intent as string;
+
+    const payment = await this.prisma.payment.findUnique({
+      where: { stripeSessionId: sessionId },
+    });
+
+    if (!payment) {
+      this.logger.error(
+        `Payment not found for session ID: ${sessionId}`,
+        '',
+        'PaymentService',
+      );
+      return;
+    }
+
+    if (payment.status === PaymentStatus.SUCCEEDED) {
+      this.logger.log(
+        `Payment already processed for session: ${sessionId}`,
+        'PaymentService',
+      );
+      return;
+    }
+
+    // Update Payment
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.SUCCEEDED,
+        stripePaymentId: paymentIntentId,
+        updatedAt: new Date(),
+      },
+    });
+
+    // Update Order
+    await this.prisma.order.update({
+      where: { id: payment.orderId },
+      data: {
+        status: 'PAID',
+      },
+    });
+
+    this.logger.log(
+      `Payment ${payment.id} and Order ${payment.orderId} updated to SUCCEEDED`,
+      'PaymentService',
+    );
+  }
 }
