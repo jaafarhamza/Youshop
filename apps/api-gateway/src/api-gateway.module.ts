@@ -7,7 +7,7 @@ import { CatalogModule } from '../../catalog-service/src/catalog.module';
 import { InventoryModule } from '../../inventory-service/src/inventory.module';
 import { OrdersModule } from '../../orders-service/src/orders.module';
 import { PaymentModule } from '../../payment-service/src/payment.module';
-import { CommonModule } from 'y/common';
+import { CommonModule, NotificationsModule } from 'y/common';
 
 @Module({
   imports: [
@@ -18,6 +18,7 @@ import { CommonModule } from 'y/common';
     InventoryModule,
     OrdersModule,
     PaymentModule,
+    NotificationsModule,
   ],
   controllers: [ApiGatewayController],
   providers: [ApiGatewayService],
