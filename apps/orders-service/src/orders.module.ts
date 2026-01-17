@@ -7,6 +7,7 @@ import { OrdersController } from './orders.controller';
 import { PrismaModule, LoggerModule } from 'y/common';
 import { InventoryModule } from 'apps/inventory-service/src/inventory.module';
 import { JwtStrategy } from 'apps/auth-service/src/strategies/jwt.strategy';
+import { OrdersListener } from './orders.listener';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { JwtStrategy } from 'apps/auth-service/src/strategies/jwt.strategy';
       }),
     }),
   ],
-  providers: [OrdersService, JwtStrategy],
+  providers: [OrdersService, JwtStrategy, OrdersListener],
   controllers: [OrdersController],
 })
 export class OrdersModule {}

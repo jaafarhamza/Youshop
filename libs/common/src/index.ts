@@ -32,6 +32,7 @@ export * from './dtos/orders/order-preview-response.dto';
 export * from './dtos/payment/create-checkout-session.dto';
 export * from './dtos/payment/checkout-session-response.dto';
 export * from './dtos/payment/payment-response.dto';
+export * from './events/payment.events';
 
 // ========================================
 // Enums

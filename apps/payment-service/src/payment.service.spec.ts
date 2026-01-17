@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentService } from './payment.service';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   PrismaService,
   CustomLoggerService,
@@ -8,8 +9,9 @@ import {
 } from '../../../../Youshop/libs/common/src';
 
 // Mock Stripe
+// Mock Stripe
 jest.mock('stripe', () => {
-  return jest.fn().mockImplementation(() => ({
+  const mockStripeInstance = {
     checkout: {
       sessions: {
         create: jest.fn().mockResolvedValue({
@@ -20,7 +22,14 @@ jest.mock('stripe', () => {
         retrieve: jest.fn(),
       },
     },
-  }));
+    webhooks: {
+      constructEvent: jest.fn(),
+    },
+  };
+  return {
+    default: jest.fn(() => mockStripeInstance),
+    __esModule: true,
+  };
 });
 
 describe('PaymentService', () => {
@@ -33,12 +42,15 @@ describe('PaymentService', () => {
     payment: {
       create: jest.fn(),
       findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
     },
   };
 
   const mockConfigService = {
     get: jest.fn((key) => {
       if (key === 'STRIPE_SECRET_KEY') return 'sk_test_mock';
+      if (key === 'STRIPE_WEBHOOK_SECRET') return 'whsec_test_mock';
       if (key === 'STRIPE_CURRENCY') return 'USD';
       return null;
     }),
@@ -50,6 +62,10 @@ describe('PaymentService', () => {
     warn: jest.fn(),
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,6 +73,7 @@ describe('PaymentService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: CustomLoggerService, useValue: mockLogger },
+        { provide: EventEmitter2, useValue: mockEventEmitter },
       ],
     }).compile();
 
@@ -113,6 +130,44 @@ describe('PaymentService', () => {
       await expect(
         service.createCheckoutSession(userId, dto),
       ).rejects.toThrow();
+    });
+  });
+
+  describe('handleWebhookEvent', () => {
+    it('should emit payment.succeeded event on verified webhook', async () => {
+      // Mock Stripe constructEvent
+      (service['stripe'].webhooks.constructEvent as jest.Mock).mockReturnValue({
+        id: 'evt_123',
+        type: 'checkout.session.completed',
+        data: {
+          object: {
+            id: 'sess_123',
+            payment_intent: 'pi_123',
+            metadata: { orderId: 'order-123' },
+          },
+        },
+      } as any);
+
+      mockPrismaService.payment.findUnique = jest.fn().mockResolvedValue({
+        id: 'pay-123',
+        stripeSessionId: 'sess_123',
+        status: 'PENDING',
+        orderId: 'order-123',
+        amount: 100,
+        currency: 'USD',
+      });
+      mockPrismaService.payment.update = jest.fn();
+      mockPrismaService.order.findUnique = jest.fn();
+
+      await service.handleWebhookEvent('sig', Buffer.from('payload'));
+
+      expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+        'payment.succeeded',
+        expect.objectContaining({
+          orderId: 'order-123',
+          paymentId: 'pay-123',
+        }),
+      );
     });
   });
 });

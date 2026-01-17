@@ -446,4 +446,57 @@ export class OrdersService {
 
     return { subtotal, tax, total };
   }
+
+  async completeOrder(
+    orderId: string,
+    paymentId: string,
+    stripePaymentId: string | null,
+  ): Promise<void> {
+    this.logger.log(
+      `Completing order ${orderId} with payment ${paymentId} (Stripe: ${stripePaymentId})`,
+      'OrdersService',
+    );
+
+    await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { items: true },
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order not found: ${orderId}`);
+      }
+
+      if (order.status === 'PAID') {
+        this.logger.log(`Order ${orderId} is already PAID`, 'OrdersService');
+        return;
+      }
+
+      // 1. Update Order Status and Payment Info
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+        },
+      });
+
+      for (const item of order.items) {
+        await tx.inventoryItem.update({
+          where: { sku: item.sku },
+          data: {
+            quantity: { decrement: item.quantity },
+            reserved: { decrement: item.quantity },
+          },
+        });
+
+        this.logger.log(
+          `Finalized inventory for SKU ${item.sku}: -${item.quantity} qty, -${item.quantity} reserved`,
+          'OrdersService',
+        );
+      }
+    });
+
+    this.logger.log(`Order ${orderId} completed successfully`, 'OrdersService');
+  }
 }

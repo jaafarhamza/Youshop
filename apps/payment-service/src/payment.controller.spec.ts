@@ -52,10 +52,7 @@ describe('PaymentController', () => {
       const result = await controller.createCheckoutSession(userId, dto);
 
       expect(result).toBe(expectedResult);
-      expect(service.createCheckoutSession.bind(service)).toHaveBeenCalledWith(
-        userId,
-        dto,
-      );
+      expect(service.createCheckoutSession).toHaveBeenCalledWith(userId, dto);
     });
   });
 });

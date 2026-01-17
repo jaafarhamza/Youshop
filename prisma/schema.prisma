@@ -100,6 +100,7 @@ model Order {
   total     Float
   createdAt DateTime    @default(now()) @map("created_at")
   updatedAt DateTime    @updatedAt @map("updated_at")
+  paidAt    DateTime?   @map("paid_at")
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     OrderItem[]
   payments  Payment[]

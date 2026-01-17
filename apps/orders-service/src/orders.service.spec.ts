@@ -256,6 +256,85 @@ describe('OrdersService', () => {
     });
   });
 
+  describe('completeOrder', () => {
+    it('should complete order and finalize inventory', async () => {
+      const orderId = 'order-123';
+      const items = [{ sku: 'ITEM-1', quantity: 2 }];
+
+      const mockTx = {
+        order: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: orderId,
+            status: 'PENDING',
+            items: items,
+          }),
+          update: jest.fn(),
+        },
+        inventoryItem: {
+          update: jest.fn(),
+        },
+      };
+
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
+
+      await service.completeOrder(orderId, 'pay-1', 'stripe-1');
+
+      expect(mockTx.order.update).toHaveBeenCalledWith({
+        where: { id: orderId },
+        data: {
+          status: 'PAID',
+          paidAt: expect.any(Date),
+        },
+      });
+
+      expect(mockTx.inventoryItem.update).toHaveBeenCalledWith({
+        where: { sku: 'ITEM-1' },
+        data: {
+          quantity: { decrement: 2 },
+          reserved: { decrement: 2 },
+        },
+      });
+    });
+
+    it('should throw NotFoundException if order does not exist', async () => {
+      const mockTx = {
+        order: {
+          findUnique: jest.fn().mockResolvedValue(null),
+        },
+      };
+
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback(mockTx);
+      });
+
+      await expect(
+        service.completeOrder('invalid-id', 'pay-1', 'stripe-1'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should not update if order is already PAID', async () => {
+      const mockTx = {
+        order: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: 'order-123',
+            status: 'PAID',
+          }),
+          update: jest.fn(),
+        },
+      };
+
+      mockPrismaService.$transaction.mockImplementation((callback) => {
+        return callback(mockTx);
+      });
+
+      await service.completeOrder('order-123', 'pay-1', 'stripe-1');
+
+      expect(mockTx.order.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle very small prices correctly', () => {
       const items = [{ sku: 'CHEAP-ITEM', quantity: 1 }];

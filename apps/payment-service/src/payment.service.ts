@@ -12,9 +12,12 @@ import {
   CustomLoggerService,
   CreateCheckoutSessionDto,
   CheckoutSessionResponseDto,
+  PaymentSucceededEvent,
+  PaymentFailedEvent,
 } from 'y/common';
 import { plainToInstance } from 'class-transformer';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class PaymentService {
@@ -27,6 +30,7 @@ export class PaymentService {
     private readonly prisma: PrismaService,
     private readonly logger: CustomLoggerService,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
 
@@ -380,12 +384,21 @@ export class PaymentService {
       case 'checkout.session.completed':
         await this.handleCheckoutSessionCompleted(event.data.object);
         break;
-      case 'payment_intent.payment_failed':
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object;
+        const failedEvent = new PaymentFailedEvent(
+          paymentIntent.metadata?.orderId || 'unknown_order',
+          paymentIntent.last_payment_error?.message || 'Unknown error',
+          paymentIntent.metadata as Record<string, never>,
+        );
+        this.eventEmitter.emit('payment.failed', failedEvent);
+
         this.logger.warn(
           `Payment failed for Intent: ${event.data.object.id}`,
           'PaymentService',
         );
         break;
+      }
       default:
         this.logger.log(
           `Unhandled event type: ${event.type}`,
@@ -431,16 +444,20 @@ export class PaymentService {
       },
     });
 
-    // Update Order
-    await this.prisma.order.update({
-      where: { id: payment.orderId },
-      data: {
-        status: 'PAID',
-      },
-    });
+    // Emit Payment Succeeded Event
+    const event = new PaymentSucceededEvent(
+      payment.orderId,
+      payment.id,
+      paymentIntentId,
+      payment.amount,
+      payment.currency,
+      (session.metadata as Record<string, never>) || undefined,
+    );
+
+    this.eventEmitter.emit('payment.succeeded', event);
 
     this.logger.log(
-      `Payment ${payment.id} and Order ${payment.orderId} updated to SUCCEEDED`,
+      `Payment ${payment.id} succeeded. Event emitted for Order ${payment.orderId}`,
       'PaymentService',
     );
   }
