@@ -10,9 +10,12 @@ import {
   OrderResponseDto,
   OrderPreviewResponseDto,
   OrderPreviewItemDto,
+  InventoryLowStockEvent,
 } from 'y/common';
+import { InventoryItem } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class OrdersService {
@@ -22,6 +25,7 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly logger: CustomLoggerService,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.taxRate = this.configService.get<number>('TAX_RATE') ?? 20;
   }
@@ -482,18 +486,39 @@ export class OrdersService {
       });
 
       for (const item of order.items) {
-        await tx.inventoryItem.update({
+        const updatedInventory = (await tx.inventoryItem.update({
           where: { sku: item.sku },
           data: {
             quantity: { decrement: item.quantity },
             reserved: { decrement: item.quantity },
           },
-        });
+          include: {
+            product: { select: { name: true } },
+          },
+        })) as InventoryItem & { product: { name: string } };
 
         this.logger.log(
-          `Finalized inventory for SKU ${item.sku}: -${item.quantity} qty, -${item.quantity} reserved`,
+          `Finalized inventory for SKU ${item.sku}: -${item.quantity} qty, -${item.quantity} reserved. New qty: ${updatedInventory.quantity}`,
           'OrdersService',
         );
+
+        // Check for Low Stock
+        if (updatedInventory.quantity <= updatedInventory.lowStockThreshold) {
+          this.logger.warn(
+            `LOW STOCK ALERT: SKU ${item.sku} is at ${updatedInventory.quantity} (Threshold: ${updatedInventory.lowStockThreshold})`,
+            'OrdersService',
+          );
+          this.eventEmitter.emit(
+            'inventory.low-stock',
+            new InventoryLowStockEvent(
+              item.sku,
+              updatedInventory.productId,
+              updatedInventory.quantity,
+              updatedInventory.lowStockThreshold,
+              updatedInventory.product.name,
+            ),
+          );
+        }
       }
     });
 

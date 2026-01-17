@@ -8,14 +8,18 @@ import {
   CustomLoggerService,
   InventoryResponseDto,
   UpdateInventoryStockDto,
+  InventoryLowStockEvent,
 } from 'y/common';
+import { InventoryItem } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class InventoryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly logger: CustomLoggerService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // Get inventory by SKU
@@ -135,19 +139,40 @@ export class InventoryService {
       );
 
       // Perform atomic update
-      const updated = await tx.inventoryItem.update({
+      const updated = (await tx.inventoryItem.update({
         where: { sku },
         data: {
           quantity: newQuantity,
           reserved: newReserved,
         },
-      });
+        include: {
+          product: { select: { name: true } },
+        },
+      })) as InventoryItem & { product: { name: string } };
 
       // Log new values for audit
       this.logger.log(
         `[AUDIT] SKU: ${sku} - After update: quantity=${updated.quantity}, reserved=${updated.reserved}, available=${updated.quantity - updated.reserved}`,
         'InventoryService',
       );
+
+      // Check for Low Stock
+      if (updated.quantity <= updated.lowStockThreshold) {
+        this.logger.warn(
+          `LOW STOCK ALERT: SKU ${sku} is at ${updated.quantity} (Threshold: ${updated.lowStockThreshold})`,
+          'InventoryService',
+        );
+        this.eventEmitter.emit(
+          'inventory.low-stock',
+          new InventoryLowStockEvent(
+            sku,
+            updated.productId,
+            updated.quantity,
+            updated.lowStockThreshold,
+            updated.product.name,
+          ),
+        );
+      }
 
       return updated;
     });
@@ -194,12 +219,35 @@ export class InventoryService {
       }
 
       // Atomic decrement
-      return tx.inventoryItem.update({
+      const updated = (await tx.inventoryItem.update({
         where: { sku },
         data: {
           quantity: { decrement: quantity },
         },
-      });
+        include: {
+          product: { select: { name: true } },
+        },
+      })) as InventoryItem & { product: { name: string } };
+
+      // Check for Low Stock
+      if (updated.quantity <= updated.lowStockThreshold) {
+        this.logger.warn(
+          `LOW STOCK ALERT: SKU ${sku} is at ${updated.quantity} (Threshold: ${updated.lowStockThreshold})`,
+          'InventoryService',
+        );
+        this.eventEmitter.emit(
+          'inventory.low-stock',
+          new InventoryLowStockEvent(
+            sku,
+            updated.productId,
+            updated.quantity,
+            updated.lowStockThreshold,
+            updated.product.name,
+          ),
+        );
+      }
+
+      return updated;
     });
 
     this.logger.log(

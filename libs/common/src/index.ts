@@ -80,10 +80,17 @@ export * from './cache/cache.module';
 export * from './health/health.controller';
 
 // ========================================
+// Events
+// ========================================
+export * from './events/payment.events';
+export * from './events/inventory.events';
+
+// ========================================
 // Notifications (WebSockets)
 // ========================================
 export * from './notifications/notifications.module';
 export * from './notifications/notifications.gateway';
+export * from './notifications/notifications.service';
 
 // ========================================
 // Common Module & Service (keep existing)
