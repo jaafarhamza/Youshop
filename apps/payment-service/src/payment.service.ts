@@ -388,6 +388,7 @@ export class PaymentService {
         const paymentIntent = event.data.object;
         const failedEvent = new PaymentFailedEvent(
           paymentIntent.metadata?.orderId || 'unknown_order',
+          paymentIntent.metadata?.userId || 'unknown_user',
           paymentIntent.last_payment_error?.message || 'Unknown error',
           paymentIntent.metadata as Record<string, never>,
         );
@@ -447,6 +448,7 @@ export class PaymentService {
     // Emit Payment Succeeded Event
     const event = new PaymentSucceededEvent(
       payment.orderId,
+      session.metadata?.userId || 'unknown_user',
       payment.id,
       paymentIntentId,
       payment.amount,

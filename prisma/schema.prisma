@@ -34,9 +34,28 @@ model User {
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
   orders       Order[]
+  notifications Notification[]
 
   @@index([email])
   @@map("users")
+}
+
+model Notification {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  type         String
+  title        String
+  message      String
+  data         Json?
+  read         Boolean  @default(false)
+  sentViaWS    Boolean  @default(false) @map("sent_via_ws")
+  sentViaEmail Boolean  @default(false) @map("sent_via_email")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
 }
 
 model Category {

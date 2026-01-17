@@ -1,6 +1,7 @@
 export class PaymentSucceededEvent {
   constructor(
     public readonly orderId: string,
+    public readonly userId: string,
     public readonly paymentId: string,
     public readonly stripePaymentId: string | null,
     public readonly amount: number,
@@ -12,6 +13,7 @@ export class PaymentSucceededEvent {
 export class PaymentFailedEvent {
   constructor(
     public readonly orderId: string,
+    public readonly userId: string,
     public readonly failureReason: string,
     public readonly metadata?: Record<string, unknown>,
   ) {}
