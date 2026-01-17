@@ -17,6 +17,15 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
 model User {
   id           String     @id @default(uuid())
   email        String     @unique
@@ -93,6 +102,7 @@ model Order {
   updatedAt DateTime    @updatedAt @map("updated_at")
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     OrderItem[]
+  payments  Payment[]
 
   @@index([userId])
   @@index([status])
@@ -115,4 +125,26 @@ model OrderItem {
   @@index([productId])
   @@index([sku])
   @@map("order_items")
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  orderId           String        @map("order_id")
+  stripeSessionId   String?       @unique @map("stripe_session_id")
+  stripePaymentId   String?       @unique @map("stripe_payment_id")
+  amount            Float
+  currency          String        @default("USD")
+  status            PaymentStatus @default(PENDING)
+  metadata          Json?
+  idempotencyKey    String?       @unique @map("idempotency_key")
+  failureReason     String?       @map("failure_reason")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([stripeSessionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
 }

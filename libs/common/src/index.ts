@@ -27,6 +27,13 @@ export * from './dtos/orders/order-response.dto';
 export * from './dtos/orders/order-preview-response.dto';
 
 // ========================================
+// DTOs - Payment
+// ========================================
+export * from './dtos/payment/create-checkout-session.dto';
+export * from './dtos/payment/checkout-session-response.dto';
+export * from './dtos/payment/payment-response.dto';
+
+// ========================================
 // Enums
 // ========================================
 export * from './enums/role.enum';
