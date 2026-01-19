@@ -3,9 +3,6 @@ import { EmailService } from './email/email.service';
 
 @Controller('notifications')
 export class NotificationServiceController {
-  getHello(): unknown {
-    throw new Error('Method not implemented.');
-  }
   constructor(private readonly emailService: EmailService) {}
 
   @Post('test-email')
@@ -19,8 +16,8 @@ export class NotificationServiceController {
         customerName: 'Test User',
         currency: 'USD',
         items: [
-          { name: 'Awesome Product', quantity: 2, price: 50 },
-          { name: 'Great Essential', quantity: 1, price: 30 },
+          { name: 'Awesome Product', quantity: 2, price: 50, currency: 'USD' },
+          { name: 'Great Essential', quantity: 1, price: 30, currency: 'USD' },
         ],
         subtotal: 130,
         tax: 15,
