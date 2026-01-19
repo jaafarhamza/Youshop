@@ -53,6 +53,17 @@
         "tsConfigPath": "apps/inventory-service/tsconfig.app.json"
       }
     },
+    "notification-service": {
+      "type": "application",
+      "root": "apps/notification-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/notification-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/notification-service/tsconfig.app.json",
+        "assets": ["src/templates/**/*"],
+        "watchAssets": true
+      }
+    },
     "orders-service": {
       "type": "application",
       "root": "apps/orders-service",

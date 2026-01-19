@@ -3,6 +3,10 @@ import { InventoryModule } from './inventory.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(InventoryModule);
-  await app.listen(process.env.port ?? 3000);
+  await app.listen(
+    Number(process.env.INVENTORY_PORT || process.env.PORT) || 3003,
+  );
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Failed to start Inventory Service:', err);
+});

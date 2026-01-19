@@ -3,6 +3,8 @@ import { OrdersModule } from './orders.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(OrdersModule);
-  await app.listen(process.env.port ?? 3000);
+  await app.listen(Number(process.env.ORDERS_PORT || process.env.PORT) || 3004);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Failed to start Orders Service:', err);
+});

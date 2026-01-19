@@ -26,6 +26,12 @@ enum PaymentStatus {
   CANCELLED
 }
 
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model User {
   id           String     @id @default(uuid())
   email        String     @unique
@@ -168,4 +174,19 @@ model Payment {
   @@index([status])
   @@index([createdAt])
   @@map("payments")
+}
+
+model EmailLog {
+  id        String      @id @default(uuid())
+  to        String
+  subject   String
+  template  String
+  status    EmailStatus @default(PENDING)
+  sentAt    DateTime?   @map("sent_at")
+  error     String?
+  attempts  Int         @default(0)
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@index([status])
+  @@map("email_logs")
 }

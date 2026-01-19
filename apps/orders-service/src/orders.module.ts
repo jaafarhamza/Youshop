@@ -7,12 +7,14 @@ import { OrdersController } from './orders.controller';
 import { PrismaModule, LoggerModule } from 'y/common';
 import { InventoryModule } from 'apps/inventory-service/src/inventory.module';
 import { JwtStrategy } from 'apps/auth-service/src/strategies/jwt.strategy';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { OrdersListener } from './orders.listener';
 
 @Module({
   imports: [
     PrismaModule,
     LoggerModule,
+    EventEmitterModule.forRoot(),
     InventoryModule,
     PassportModule,
     ConfigModule.forRoot({ isGlobal: true }),

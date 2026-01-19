@@ -6,16 +6,19 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule, LoggerModule, JwtAuthGuard, RolesGuard } from 'y/common';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     PrismaModule,
     LoggerModule,
     PassportModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.registerAsync({
-      useFactory: (): JwtModuleOptions => {
-        const secret = process.env.JWT_SECRET;
-        const expiresInEnv = process.env.JWT_EXPIRES_IN;
+      inject: [ConfigService],
+      useFactory: (config: ConfigService): JwtModuleOptions => {
+        const secret = config.get<string>('JWT_SECRET');
+        const expiresInEnv = config.get<string>('JWT_EXPIRES_IN');
 
         const expiresIn = expiresInEnv as SignOptions['expiresIn'];
 

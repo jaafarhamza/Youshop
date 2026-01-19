@@ -36,16 +36,18 @@ async function bootstrap() {
         description: 'Enter JWT token',
         in: 'header',
       },
-      'JWT-auth', // This name here is important for matching up with @ApiBearerAuth() in your controller!
+      'JWT-auth',
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT ?? 3000;
+  const port = Number(process.env.GATEWAY_PORT || process.env.PORT) || 3000;
   await app.listen(port);
   console.log(
     `🚀 API Gateway running on: http://localhost:${port}/${apiPrefix}`,
   );
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Failed to start API Gateway:', err);
+});

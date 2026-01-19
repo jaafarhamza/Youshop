@@ -7,10 +7,13 @@ import { InventoryController } from './inventory.controller';
 import { PrismaModule, LoggerModule } from 'y/common';
 import { JwtStrategy } from 'apps/auth-service/src/strategies/jwt.strategy';
 
+import { EventEmitterModule } from '@nestjs/event-emitter';
+
 @Module({
   imports: [
     PrismaModule,
     LoggerModule,
+    EventEmitterModule.forRoot(),
     PassportModule,
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.registerAsync({
