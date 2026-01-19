@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background: #000;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        border-radius: 8px 8px 0 0;
+      }
+      .content {
+        padding: 20px;
+        border: 1px solid #eee;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+      }
+      .alert-box {
+        background: #fff5f5;
+        border-left: 4px solid #000;
+        padding: 15px;
+        margin: 20px 0;
+        font-weight: bold;
+        color: #dc3545;
+      }
+      .btn {
+        display: inline-block;
+        background: #333;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-top: 20px;
+      }
+      .footer {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='header'>
+      <h1>OUT OF STOCK ALERT</h1>
+    </div>
+    <div class='content'>
+      <p>Hello Admin,</p>
+      <div class='alert-box'>
+        CRITICAL: The following product is now OUT OF STOCK.
+      </div>
+      <p><strong>Product:</strong> {{productName}}</p>
+      <p><strong>SKU:</strong> {{sku}}</p>
+      <a href='{{inventoryUrl}}' class='btn'>Restock Now</a>
+      <div class='footer'>
+        <p>&copy; 2026 Youshop. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

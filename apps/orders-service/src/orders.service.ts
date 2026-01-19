@@ -13,6 +13,7 @@ import {
   InventoryLowStockEvent,
   OrderCreatedEvent,
   OrderCancelledEvent,
+  InventoryOutOfStockEvent,
 } from 'y/common';
 import { InventoryItem } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
@@ -531,8 +532,19 @@ export class OrdersService {
           'OrdersService',
         );
 
-        // Check for Low Stock
-        if (updatedInventory.quantity <= updatedInventory.lowStockThreshold) {
+        // Check for Low Stock / Out of Stock
+        if (updatedInventory.quantity <= 0) {
+          this.eventEmitter.emit(
+            'inventory.out-of-stock',
+            new InventoryOutOfStockEvent(
+              item.sku,
+              updatedInventory.productId,
+              updatedInventory.product.name,
+            ),
+          );
+        } else if (
+          updatedInventory.quantity <= updatedInventory.lowStockThreshold
+        ) {
           this.logger.warn(
             `LOW STOCK ALERT: SKU ${item.sku} is at ${updatedInventory.quantity} (Threshold: ${updatedInventory.lowStockThreshold})`,
             'OrdersService',

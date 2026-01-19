@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <title>Order Received</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+        line-height: 1.6;
+      }
+      .container {
+        width: 80%;
+        margin: 20px auto;
+        border: 1px solid #eee;
+        padding: 20px;
+        border-radius: 10px;
+      }
+      .header {
+        text-align: center;
+        border-bottom: 2px solid #f4f4f4;
+        padding-bottom: 20px;
+        color: #007bff;
+      }
+      .content {
+        margin: 20px 0;
+      }
+      .footer {
+        margin-top: 40px;
+        font-size: 12px;
+        color: #777;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <div class='header'>
+        <h1>Order Received!</h1>
+        <p>Order ID: #{{orderId}}</p>
+      </div>
+      <div class='content'>
+        <p>Hi {{customerName}},</p>
+        <p>Thank you for choosing Youshop! We've successfully received your
+          order for
+          <strong>{{itemsCount}} items</strong>.</p>
+        <p>We are currently validating your payment. Once confirmed, we will
+          begin preparing your shipment.</p>
+        <p><strong>Total Amount:</strong> {{total}}</p>
+      </div>
+      <div class='footer'>
+        <p>&copy; 2026 Youshop. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>
