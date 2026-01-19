@@ -18,6 +18,11 @@ export class EmailService {
     subject: string,
     template: string,
     context: Record<string, unknown>,
+    attachments?: Array<{
+      filename: string;
+      content: Buffer | string;
+      contentType?: string;
+    }>,
   ): Promise<string> {
     try {
       // 1. Log the email in the database
@@ -40,6 +45,7 @@ export class EmailService {
           subject,
           template,
           context,
+          attachments,
         },
         {
           attempts: 3,

@@ -146,9 +146,16 @@ export class InventoryService {
           reserved: newReserved,
         },
         include: {
-          product: { select: { name: true } },
+          product: {
+            select: {
+              name: true,
+              category: { select: { lowStockThreshold: true } },
+            },
+          },
         },
-      })) as InventoryItem & { product: { name: string } };
+      })) as InventoryItem & {
+        product: { name: string; category: { lowStockThreshold: number } };
+      };
 
       // Log new values for audit
       this.logger.log(
@@ -156,10 +163,16 @@ export class InventoryService {
         'InventoryService',
       );
 
+      // Determine effective threshold (Product threshold overrides Category threshold if different from default)
+      const effectiveThreshold =
+        updated.lowStockThreshold !== 10
+          ? updated.lowStockThreshold
+          : updated.product.category.lowStockThreshold;
+
       // Check for Low Stock
-      if (updated.quantity <= updated.lowStockThreshold) {
+      if (updated.quantity <= effectiveThreshold) {
         this.logger.warn(
-          `LOW STOCK ALERT: SKU ${sku} is at ${updated.quantity} (Threshold: ${updated.lowStockThreshold})`,
+          `LOW STOCK ALERT: SKU ${sku} is at ${updated.quantity} (Threshold: ${effectiveThreshold})`,
           'InventoryService',
         );
         this.eventEmitter.emit(
@@ -168,7 +181,7 @@ export class InventoryService {
             sku,
             updated.productId,
             updated.quantity,
-            updated.lowStockThreshold,
+            effectiveThreshold,
             updated.product.name,
           ),
         );
@@ -225,14 +238,27 @@ export class InventoryService {
           quantity: { decrement: quantity },
         },
         include: {
-          product: { select: { name: true } },
+          product: {
+            select: {
+              name: true,
+              category: { select: { lowStockThreshold: true } },
+            },
+          },
         },
-      })) as InventoryItem & { product: { name: string } };
+      })) as InventoryItem & {
+        product: { name: string; category: { lowStockThreshold: number } };
+      };
+
+      // Determine effective threshold (Product threshold overrides Category threshold if different from default)
+      const effectiveThreshold =
+        updated.lowStockThreshold !== 10
+          ? updated.lowStockThreshold
+          : updated.product.category.lowStockThreshold;
 
       // Check for Low Stock
-      if (updated.quantity <= updated.lowStockThreshold) {
+      if (updated.quantity <= effectiveThreshold) {
         this.logger.warn(
-          `LOW STOCK ALERT: SKU ${sku} is at ${updated.quantity} (Threshold: ${updated.lowStockThreshold})`,
+          `LOW STOCK ALERT: SKU ${sku} is at ${updated.quantity} (Threshold: ${effectiveThreshold})`,
           'InventoryService',
         );
         this.eventEmitter.emit(
@@ -241,7 +267,7 @@ export class InventoryService {
             sku,
             updated.productId,
             updated.quantity,
-            updated.lowStockThreshold,
+            effectiveThreshold,
             updated.product.name,
           ),
         );

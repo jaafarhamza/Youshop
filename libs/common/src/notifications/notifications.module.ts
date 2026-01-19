@@ -6,11 +6,13 @@ import { PrismaModule } from '../database/prisma.module';
 import { NotificationsService } from './notifications.service';
 import { NotificationsListener } from './notifications.listener';
 import { InventoryListener } from './inventory.listener';
+import { CacheModule } from '../cache/cache.module';
 
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
+    CacheModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

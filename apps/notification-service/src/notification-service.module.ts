@@ -10,6 +10,10 @@ import { TemplateService } from './email/template.service';
 import { PrismaModule } from 'y/common/database/prisma.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { OrdersListener } from './orders.listener';
+import { PDFService } from './email/pdf.service';
+import { AdminAlertListener } from './admin-alert.listener';
+import { EmailProvider } from './email/providers/email-provider.interface';
+import { NodemailerProvider } from './email/providers/nodemailer.provider';
 
 @Module({
   imports: [
@@ -54,6 +58,12 @@ import { OrdersListener } from './orders.listener';
     EmailProcessor,
     TemplateService,
     OrdersListener,
+    PDFService,
+    AdminAlertListener,
+    {
+      provide: EmailProvider,
+      useClass: NodemailerProvider,
+    },
   ],
   exports: [EmailService],
 })

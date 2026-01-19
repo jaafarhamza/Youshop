@@ -1,0 +1,89 @@
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <title>Payment Failed</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+        line-height: 1.6;
+      }
+      .container {
+        width: 80%;
+        margin: 20px auto;
+        border: 1px solid #eee;
+        padding: 20px;
+        border-radius: 10px;
+      }
+      .header {
+        text-align: center;
+        border-bottom: 2px solid #f4f4f4;
+        padding-bottom: 20px;
+      }
+      .content {
+        margin: 20px 0;
+      }
+      .error-box {
+        background-color: #fff5f5;
+        border: 1px solid #feb2b2;
+        color: #c53030;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .footer {
+        margin-top: 40px;
+        font-size: 12px;
+        color: #777;
+        text-align: center;
+      }
+      .button {
+        background-color: #e53e3e;
+        color: white;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <div class='header'>
+        <h1>Payment Unsuccessful</h1>
+        <p>Order ID: #{{orderId}}</p>
+      </div>
+
+      <div class='content'>
+        <p>Hi {{customerName}},</p>
+        <p>We're sorry, but we were unable to process the payment for your
+          order. Your items are still reserved for a limited time, so you can
+          try again using the link below.</p>
+
+        <div class='error-box'>
+          <strong>Reason for failure:</strong>
+          {{failureReason}}
+        </div>
+
+        <div style='text-align: center; margin: 30px 0;'>
+          <a href='{{retryUrl}}' class='button'>Retry Payment</a>
+        </div>
+
+        <p>If you continue to have issues, please check with your bank or try a
+          different payment method.</p>
+      </div>
+
+      <div class='footer'>
+        <p>&copy; 2026 Youshop. All rights reserved.</p>
+        <p>If you have any questions, reply to this email or contact support.</p>
+        <p style='margin-top: 10px; font-size: 10px;'>
+          You received this email because you attempted a purchase at Youshop.
+          <a href='{{unsubscribeUrl}}'>Unsubscribe</a>
+          |
+          <a href='{{preferencesUrl}}'>Manage Preferences</a>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,10 +1,10 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
-import { MailerService } from '@nestjs-modules/mailer';
 import { PrismaService } from 'y/common/database/prisma.service';
 import { EmailStatus } from '@prisma/client';
 import { TemplateService } from './template.service';
+import { EmailProvider } from './providers/email-provider.interface';
 
 interface EmailJobData {
   logId: string;
@@ -12,6 +12,11 @@ interface EmailJobData {
   subject: string;
   template: string;
   context: Record<string, unknown>;
+  attachments?: Array<{
+    filename: string;
+    content: string | Buffer;
+    contentType?: string;
+  }>;
 }
 
 @Processor('email')
@@ -19,7 +24,7 @@ export class EmailProcessor {
   private readonly logger = new Logger(EmailProcessor.name);
 
   constructor(
-    private readonly mailerService: MailerService,
+    private readonly provider: EmailProvider,
     private readonly prisma: PrismaService,
     private readonly templateService: TemplateService,
   ) {}
@@ -40,11 +45,12 @@ export class EmailProcessor {
       // 2. Render template
       const html = this.templateService.compileTemplate(template, context);
 
-      // 3. Send email
-      await this.mailerService.sendMail({
+      // 3. Send email using strategy provider
+      await this.provider.send({
         to,
         subject,
         html,
+        attachments: job.data.attachments,
       });
 
       // 4. Update status to SENT

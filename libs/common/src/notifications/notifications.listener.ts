@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationsService } from './notifications.service';
-import { PaymentSucceededEvent } from '../events/payment.events';
+import {
+  PaymentSucceededEvent,
+  PaymentFailedEvent,
+} from '../events/payment.events';
 
 @Injectable()
 export class NotificationsListener {
@@ -31,6 +34,30 @@ export class NotificationsListener {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
         `Error handling payment success notification: ${message}`,
+      );
+    }
+  }
+
+  @OnEvent('payment.failed')
+  async handlePaymentFailed(event: PaymentFailedEvent) {
+    this.logger.log(
+      `Handling payment failure event for order ${event.orderId}`,
+    );
+    try {
+      await this.notificationsService.createNotification({
+        userId: event.userId,
+        type: 'payment:failed',
+        title: 'Payment Failed',
+        message: `Your payment for order ${event.orderId} failed: ${event.failureReason}. Please try again or use a different method.`,
+        data: {
+          orderId: event.orderId,
+          reason: event.failureReason,
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Error handling payment failure notification: ${message}`,
       );
     }
   }
