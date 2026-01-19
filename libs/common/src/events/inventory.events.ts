@@ -7,3 +7,11 @@ export class InventoryLowStockEvent {
     public readonly productName: string,
   ) {}
 }
+
+export class InventoryOutOfStockEvent {
+  constructor(
+    public readonly sku: string,
+    public readonly productId: string,
+    public readonly productName: string,
+  ) {}
+}

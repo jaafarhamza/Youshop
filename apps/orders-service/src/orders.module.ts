@@ -4,17 +4,16 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
-import { PrismaModule, LoggerModule } from 'y/common';
+import { PrismaModule, LoggerModule, CommonModule } from 'y/common';
 import { InventoryModule } from 'apps/inventory-service/src/inventory.module';
 import { JwtStrategy } from 'apps/auth-service/src/strategies/jwt.strategy';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { OrdersListener } from './orders.listener';
 
 @Module({
   imports: [
     PrismaModule,
     LoggerModule,
-    EventEmitterModule.forRoot(),
+    CommonModule,
     InventoryModule,
     PassportModule,
     ConfigModule.forRoot({ isGlobal: true }),

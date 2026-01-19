@@ -7,8 +7,7 @@ import { NotificationServiceService } from './notification-service.service';
 import { EmailService } from './email/email.service';
 import { EmailProcessor } from './email/email.processor';
 import { TemplateService } from './email/template.service';
-import { PrismaModule } from 'y/common/database/prisma.module';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { PrismaModule, CommonModule } from 'y/common';
 import { OrdersListener } from './orders.listener';
 import { PDFService } from './email/pdf.service';
 import { AdminAlertListener } from './admin-alert.listener';
@@ -18,7 +17,7 @@ import { NodemailerProvider } from './email/providers/nodemailer.provider';
 @Module({
   imports: [
     PrismaModule,
-    EventEmitterModule.forRoot({ global: true }),
+    CommonModule,
     ConfigModule.forRoot({ isGlobal: true }),
     BullModule.forRootAsync({
       imports: [ConfigModule],

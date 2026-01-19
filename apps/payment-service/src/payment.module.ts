@@ -3,11 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import { PaymentController } from './payment.controller';
 import { WebhookController } from './webhook.controller';
 import { PaymentService } from './payment.service';
-import { PrismaModule, LoggerModule } from 'y/common';
+import { PrismaModule, LoggerModule, CommonModule } from 'y/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-
-import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -19,7 +17,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     }),
     PrismaModule,
     LoggerModule,
-    EventEmitterModule.forRoot(),
+    CommonModule,
   ],
   controllers: [PaymentController, WebhookController],
   providers: [PaymentService],

@@ -9,6 +9,7 @@ import {
   InventoryResponseDto,
   UpdateInventoryStockDto,
   InventoryLowStockEvent,
+  InventoryOutOfStockEvent,
 } from 'y/common';
 import { InventoryItem } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
@@ -520,5 +521,47 @@ export class InventoryService {
       },
       { excludeExtraneousValues: true },
     );
+  }
+
+  private checkStockEvents(
+    inventory: InventoryItem & { product: { name: string } },
+    threshold: number,
+  ) {
+    const available = inventory.quantity - inventory.reserved;
+
+    // Check for Out of Stock
+    if (available <= 0) {
+      this.logger.error(
+        `OUT OF STOCK: SKU ${inventory.sku} is out of stock!`,
+        '',
+        'InventoryService',
+      );
+      this.eventEmitter.emit(
+        'inventory.out-of-stock',
+        new InventoryOutOfStockEvent(
+          inventory.sku,
+          inventory.productId,
+          inventory.product.name,
+        ),
+      );
+    }
+
+    // Check for Low Stock
+    if (inventory.quantity <= threshold) {
+      this.logger.warn(
+        `LOW STOCK ALERT: SKU ${inventory.sku} is at ${inventory.quantity} (Threshold: ${threshold})`,
+        'InventoryService',
+      );
+      this.eventEmitter.emit(
+        'inventory.low-stock',
+        new InventoryLowStockEvent(
+          inventory.sku,
+          inventory.productId,
+          inventory.quantity,
+          threshold,
+          inventory.product.name,
+        ),
+      );
+    }
   }
 }

@@ -11,6 +11,8 @@ import {
   OrderPreviewResponseDto,
   OrderPreviewItemDto,
   InventoryLowStockEvent,
+  OrderCreatedEvent,
+  OrderCancelledEvent,
 } from 'y/common';
 import { InventoryItem } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
@@ -158,6 +160,23 @@ export class OrdersService {
 
       return createdOrder;
     });
+
+    // Emit OrderCreatedEvent
+    this.eventEmitter.emit(
+      'order.created',
+      new OrderCreatedEvent(
+        order.id,
+        order.userId,
+        order.total,
+        order.items.map(
+          (item: { sku: string; quantity: number; unitPrice: number }) => ({
+            sku: item.sku,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+          }),
+        ),
+      ),
+    );
 
     // Transform to DTO
     return plainToInstance(OrderResponseDto, order, {
@@ -323,6 +342,16 @@ export class OrdersService {
 
       return cancelledOrder;
     });
+
+    // Emit OrderCancelledEvent
+    this.eventEmitter.emit(
+      'order.cancelled',
+      new OrderCancelledEvent(
+        order.id,
+        order.userId,
+        'User requested cancellation',
+      ),
+    );
 
     return plainToInstance(OrderResponseDto, order, {
       excludeExtraneousValues: true,

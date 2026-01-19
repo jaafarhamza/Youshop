@@ -84,6 +84,7 @@ export * from './health/health.controller';
 // ========================================
 export * from './events/payment.events';
 export * from './events/inventory.events';
+export * from './events/order.events';
 
 // ========================================
 // Notifications (WebSockets)
